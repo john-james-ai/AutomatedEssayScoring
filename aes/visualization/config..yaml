@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : Deep Automated Neural Network Essay Scoring and Evaluation (DANNESE)                #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.9.12                                                                              #
+# Filename   : /config..yaml                                                                       #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john.james.ai.studio@gmail.com                                                      #
+# URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Tuesday August 9th 2022 09:53:35 pm                                                 #
+# Modified   : Wednesday August 10th 2022 03:15:24 pm                                              #
+# ------------------------------------------------------------------------------------------------ #
+# License    : BSD 3-clause "New" or "Revised" License                                             #
+# Copyright  : (c) 2022 John James                                                                 #
+# ================================================================================================ #
+---
+folders:
+    fpe2022:
+      raw: data/fpe2022/0_raw
+      interim: data/fpe2022/1_interim
+      processed: data/fpe2022/2_processed
+    fpe2021:
+      raw: data/fpe2021/0_raw
+      interim: data/fpe2021/1_interim
+      processed: data/fpe2021/2_processed
+columns:
+    train:
+      idvar: discourse_id,
+      features:
+        - essay_id,
+        - discourse_text,
+        - discourse_type,
+      text: discourse_text
+      target: discourse_effectiveness
+

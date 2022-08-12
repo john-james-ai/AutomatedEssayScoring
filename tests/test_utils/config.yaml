@@ -1,0 +1,8 @@
+visual:
+  figsize:
+    small: (10,5)
+    medium: (12,6)
+    large: (16,8)
+    vlarge: (24,12)
+  style: whitegrid
+  palette: Glues_d
