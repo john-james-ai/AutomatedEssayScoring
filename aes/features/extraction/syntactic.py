@@ -4,26 +4,16 @@
 # Project    : Deep Automated Neural Network Essay Scoring and Evaluation (DANNESE)                #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.9.12                                                                              #
-# Filename   : /config.yaml                                                                        #
+# Filename   : /syntactic.py                                                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Tuesday August 9th 2022 09:53:35 pm                                                 #
-# Modified   : Wednesday August 10th 2022 03:32:10 pm                                              #
+# Created    : Wednesday August 10th 2022 06:28:46 pm                                              #
+# Modified   : Thursday August 11th 2022 04:00:37 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
 # ================================================================================================ #
----
-columns:
-    idvar: discourse_id
-    features:
-        - essay_id
-        - discourse_text
-        - discourse_type
-    text: discourse_text
-    target:
-        - discourse_effectiveness
-...
+

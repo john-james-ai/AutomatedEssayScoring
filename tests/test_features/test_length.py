@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : Deep Automated Neural Network Essay Scoring and Evaluation (DANNESE)                #
+# Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.9.12                                                                              #
 # Filename   : /test_length.py                                                                     #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday August 10th 2022 04:15:45 pm                                              #
-# Modified   : Wednesday August 10th 2022 08:43:57 pm                                              #
+# Modified   : Friday August 12th 2022 08:43:33 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
@@ -21,11 +21,11 @@ import pytest
 import logging
 import logging.config
 
-from aes.utils.log_config import LOG_CONFIG
+from aes.utils.config import LogConfig
 from aes.features.extraction.base import FeatureExtractorFactory
 
 # ------------------------------------------------------------------------------------------------ #
-logging.config.dictConfig(LOG_CONFIG)
+logging.config.dictConfig(LogConfig().config)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 # ------------------------------------------------------------------------------------------------ #

@@ -1,0 +1,4 @@
+DEBUG | 2022-08-10 20:43:43,609 | test_length | 	Started TestLengthFeatureExtractors test_length_features
+DEBUG | 2022-08-10 20:43:43,894 | test_length | Extracting alphabetic_character_count
+DEBUG | 2022-08-10 20:43:43,915 | test_length | Extracting number_character_count
+DEBUG | 2022-08-10 20:43:43,922 | test_length | Extracting special_character_count

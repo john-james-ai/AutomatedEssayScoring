@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : Deep Automated Neural Network Essay Scoring and Evaluation (DANNESE)                #
+# Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
 # Version    : 0.1.0                                                                               #
 # Filename   : /profile.py                                                                         #
 # ------------------------------------------------------------------------------------------------ #
@@ -10,11 +10,13 @@
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday August 3rd 2022 05:21:41 am                                               #
-# Modified   : Wednesday August 10th 2022 06:36:24 am                                              #
+# Modified   : Friday August 12th 2022 11:39:06 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
 # ================================================================================================ #
+import os
+from datetime import datetime
 from abc import ABC, abstractmethod
 import re
 import pandas as pd
@@ -24,442 +26,166 @@ import logging.config
 import matplotlib.pyplot as plt
 import seaborn as sns
 from copy import copy
-from nltk.tokenize import sent_tokenize
-from nltk.corpus import stopwords
+import spacy
+from spacy.tokens import Doc
 
 # ------------------------------------------------------------------------------------------------ #
-from fpe.utils.log_config import LOG_CONFIG
-from fpe.data import specials, punctuation, controls
+from aes.utils.config import LogConfig, SpacyConfig
+from aes.data.dataset import Dataset
 
 # ------------------------------------------------------------------------------------------------ #
-logging.config.dictConfig(LOG_CONFIG)
+logging.config.dictConfig(LogConfig().config)
 logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------ #
 
 
-class TextProfiler:
-    """Provides an overview of the basic properties and characteristics of tabular and text data.
+class Profile:
+    """Profiles a Corpus
 
     Args:
-        data (pd.DataFrame): The data to be profiled in a pandas DataFrame
-        text_col (str): The column containing the text data.
-    """
-
-    def __init__(self, data: pd.DataFrame, text_col: str) -> None:
-        self._data = data
-        self._text_col = text_col
-
-    @property
-    def rows(self) -> int:
-        """Returns the number of rows in the dataset."""
-        return self._data.shape[0]
-
-    @property
-    def columns(self) -> int:
-        """Returns the number of columns in the dataset."""
-        return self._data.shape[1]
-
-    @property
-    def memory(self) -> pd.DataFrame:
-        df = self._data.memory_usage(deep=True, index=False).to_frame().reset_index()
-        df = df.rename(columns={"index": "Column", 0: "Memory (Bytes)"})
-        d = {"Column": "Total", "Memory (Bytes)": df["Memory (Bytes)"].sum()}
-        total = pd.DataFrame(data=d, index=[df.shape[0] + 1])
-        df = pd.concat([df, total], axis=0)
-        return df.style.format(thousands=",")
-
-    @property
-    def cardinality(self) -> pd.DataFrame:
-        """Returns the cardinality of each column in a Dataframe."""
-        return pd.DataFrame(data=self._data.nunique(), columns=["Cardinality"])
-
-    @property
-    def duplicate_text(self) -> pd.DataFrame:
-        """Returns the count, and fraction of duplication in each column and duplicated data."""
-
-        duplicates = self._data[self._data.duplicated(subset="discourse_text", keep=False)]
-
-        stats = {
-            "Column": "discourse_text",
-            "Num Duplicates": len(duplicates),
-            "Pct Duplicates": len(duplicates) / self._data.shape[0] * 100,
-        }
-
-        d = {}
-        d["stats"] = pd.DataFrame(data=stats, index=[0]).set_index(["Column"])
-        d["data"] = duplicates["discourse_text"]
-        return d
-
-    def value_counts(self, col: str) -> pd.DataFrame:
-        """Returns the value counts and normalized proportions."""
-        df1 = self._data[col].value_counts().to_frame()
-        df2 = round(self._data[col].value_counts(normalize=True).to_frame(), 2)
-        df1 = df1.merge(df2, left_index=True, right_index=True, suffixes=("_count", "_ratio"))
-        return df1
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class FeatureExtractor:
-    """Performs character, word, and sentence feature extraction via delegation to FeatureExtractor Classes"""
-
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        self._data = data
-        self._columns = data.columns.tolist()
-        self._text_col = text_col
-        self._feature_extractor = None
-        self._feature = None
-
-    @property
-    def feature(self) -> str:
-        return self._feature
-
-    @feature.setter
-    def feature(self, feature: str) -> None:
-        self._feature = feature
-        if feature.lower().startswith("alpha"):
-            self._feature_extractor = AlphabeticFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-        elif feature.lower().startswith("numeric"):
-            self._feature_extractor = NumericFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-        elif feature.lower().startswith("special"):
-            self._feature_extractor = SpecialCharacterFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-        elif feature.lower().startswith("control"):
-            self._feature_extractor = ControlCharacterFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-        elif feature.lower().startswith("punctuation"):
-            self._feature_extractor = PunctuationFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-        elif feature.lower().startswith("word") and "length" not in feature.lower():
-            self._feature_extractor = WordFeatures(data=copy(self._data), text_col=self._text_col)
-        elif feature.lower().startswith("word") and "length" in feature.lower():
-            self._feature_extractor = WordLengthFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-        elif feature.lower().startswith("sentence") and "length" not in feature.lower():
-            self._feature_extractor = SentenceFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-        elif feature.lower().startswith("sentence") and "length" in feature.lower():
-            self._feature_extractor = SentenceLengthFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-
-        elif feature.lower().startswith("upper"):
-            self._feature_extractor = UpperCaseFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-
-        elif feature.lower().startswith("stop"):
-            self._feature_extractor = StopWordFeatures(
-                data=copy(self._data), text_col=self._text_col
-            )
-
-        else:
-            raise ValueError("Invalid feature")
-
-    @property
-    def total(self) -> int:
-        return self._feature_extractor.total
-
-    @property
-    def features(self) -> pd.DataFrame:
-        return self._feature_extractor.features
-
-    @property
-    def statistics(self) -> int:
-        return self._feature_extractor.statistics
-
-    @property
-    def random_discourse(self) -> pd.DataFrame:
-        columns = self._columns
-        columns.append(self._feature)
-        return self._feature_extractor.random_discourse
-
-    def get_extractor(self) -> int:
-        return self._feature_extractor
-
-    def plot(
-        self, fig: plt.figure, title: str = None, xlab: str = None, ylab: str = None
-    ) -> plt.figure:
-        return self._feature_extractor.plot(fig=fig, title=title, xlab=xlab, ylab=ylab)
-
-
-# ------------------------------------------------------------------------------------------------ #
-class FeatureExtractorBase(ABC):
-    """Base class defining API for text feature extractors.
-
-    Args:
-        data (np.array): Numpy array containing the text.
-        text_col (str): The column name to be used for the text in the feature extraction output
+        dataset (Dataset): The Dataset object the profile represents
+        metadata (pd.DataFrame): Token level metadata
 
     """
 
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        self._data = data  # The training data
-        self._text_col = text_col  # Column name containing the text
-        self._total = None  # The total count for the feature in the text
-        self._statistics = None  # The descriptive statistics for the feature by row of text
-        self._name = None  # The name of the feature extracted by the subclass.
-        self._extracted = False
+    def __init__(self, dataset: Dataset) -> None:
+        self._dataset = dataset
+        self._token_data = None
+        self._created = datetime.now()
 
     @property
-    def total(self) -> int:
-        """Returns the total count for the feature in the text."""
-        self._check_extracted()
-        return self._data[self._name].values.sum()
+    def dataset_name(self) -> str:
+        return self._dataset.name
 
     @property
-    def features(self) -> pd.DataFrame:
-        """Returns a dataframe with the text and the associated feature counts by observation."""
-        self._check_extracted()
-        return self._data.sort_values(by=self._name, ascending=False, axis=0)
+    def filepath(self) -> str:
+        return self._dataset.filepath
+
+
+# ------------------------------------------------------------------------------------------------ #
+
+
+class ProfileBuilder:
+    """Constructs a Profile for a dataset"""
+
+    def __init__(self) -> None:
+
+
+        self.reset()
+        self._get_config()
 
     @property
-    def statistics(self) -> pd.DataFrame:
-        self._check_extracted()
-        return self._data[self._name].describe().to_frame().T
+    def dataset(self) -> Dataset:
+        return self._dataset
+
+    @dataset.setter
+    def dataset(self, dataset: Dataset) -> None:
+        self._dataset = dataset
+        self._reset()
 
     @property
-    def random_discourse(self) -> pd.DataFrame:
-        idx = self._data[self._data[self._name] > 0].index.values.tolist()
-        return self._data.loc[np.random.choice(idx)].to_frame()
-
-    @abstractmethod
-    def _extract(self) -> None:
-        """Computes the feature counts by text observation."""
-        pass
-
-    def plot(
-        self, fig: plt.figure, title: str = None, xlab: str = None, ylab: str = None
-    ) -> plt.figure:
-        """Histogram displaying the distribution of the feature counts."""
-        self._check_extracted()
-        ax = fig.add_subplot()
-        ax = sns.histplot(data=self._data, x=self._name)
-        ax.set_xlabel(xlabel=xlab)
-        ax.set_ylabel(ylabel=ylab)
-        ax.set_title(label=title, size=16)
-        return fig
-
-    def _check_extracted(self) -> None:
-        if not self._extracted:
-            self._extract()
-            self._extracted = True
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class AlphabeticFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(AlphabeticFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "alpha"
-
-    def _extract(self) -> None:
-        self._data[self._name] = self._data[self._text_col].apply(
-            lambda x: len([i for i in x if i.isalpha()])
-        )
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class NumericFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(NumericFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "numeric"
-
-    def _extract(self) -> None:
-        self._data[self._name] = self._data[self._text_col].apply(
-            lambda x: len([x for x in x.split() if x.isdigit()])
-        )
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class SpecialCharacterFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(SpecialCharacterFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "special_characters"
-        self._counts_dict = {}
-        self._counts = None
-
-    @property
-    def counts(self) -> pd.DataFrame:
-        return self._counts
-
-    def _extract(self) -> None:
-        self._initialize_counts()
-        self._data[self._name] = self._data[self._text_col].apply(lambda x: self._count_specials(x))
-        self._counts = pd.DataFrame.from_dict(
-            data=self._counts_dict, orient="index", columns=["Count"]
-        ).sort_values(by="Count", ascending=False)
-
-    def _initialize_counts(self) -> None:
-        for k, v in specials.items():
-            self._counts_dict[k] = 0
-
-    def _count_specials(self, discourse: str) -> int:
-        total = 0
-        for k, v in specials.items():
-            count = len(re.findall(v, discourse))
-            self._counts_dict[k] += count
-            total += count
-        return total
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class PunctuationFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(PunctuationFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "punctuation"
-        self._counts_dict = {}
-        self._counts = None
-
-    @property
-    def counts(self) -> pd.DataFrame:
-        return self._counts
-
-    def _extract(self) -> None:
-        self._initialize_counts()
-        self._data[self._name] = self._data[self._text_col].apply(
-            lambda x: self._count_punctuation(x)
-        )
-        self._counts = pd.DataFrame.from_dict(
-            data=self._counts_dict, orient="index", columns=["Count"]
-        ).sort_values(by="Count", ascending=False)
-
-    def _initialize_counts(self) -> None:
-        for k, v in punctuation.items():
-            self._counts_dict[k] = 0
-
-    def _count_punctuation(self, discourse: str) -> int:
-        total = 0
-        for k, v in punctuation.items():
-            count = len(re.findall(v, discourse))
-            self._counts_dict[k] += count
-            total += count
-        return total
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class ControlCharacterFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(ControlCharacterFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "control"
-
-    def _extract(self) -> None:
-        self._data[self._name] = self._data[self._text_col].apply(lambda x: self._count_controls(x))
-
-    def _count_controls(self, discourse: str) -> int:
-        total = 0
-        for k, v in controls.items():
-            total += len(re.findall(v, discourse))
-        return total
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class WordFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(WordFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "words"
-
-    def _extract(self) -> None:
-        self._data[self._name] = self._data[self._text_col].apply(lambda x: len(str(x).split(" ")))
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class WordLengthFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(WordLengthFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "word_length"
-
-    def _extract(self) -> None:
-        self._data[self._name] = self._data[self._text_col].apply(
-            lambda x: self._average_word_length(x)
-        )
-
-    def _average_word_length(self, discourse: str) -> float:
-        words = discourse.split()
-        return sum(len(word) for word in words) / len(words)
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class SentenceFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(SentenceFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "sentences"
-
-    def _extract(self) -> None:
-        self._data[self._name] = self._data[self._text_col].apply(lambda x: len(sent_tokenize(x)))
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class SentenceLengthFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(SentenceLengthFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "sentence_length"
-
-    def _extract(self) -> None:
-        self._data[self._name] = self._data[self._text_col].apply(
-            lambda x: self._average_sentence_length(x)
-        )
-
-    def _average_sentence_length(self, discourse: str) -> float:
-        sentences = list(sent_tokenize(discourse))
-        return sum(len(sentence.split()) for sentence in sentences) / len(sentences)
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class UpperCaseFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(UpperCaseFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "upper_case"
-
-    def _extract(self) -> None:
-        self._data[self._name] = self._data[self._text_col].apply(
-            lambda x: self._count_upper_case_words(x)
-        )
-
-    def _count_upper_case_words(self, discourse: str) -> float:
-        words = discourse.split()
-        return sum(word.isupper() for word in words) / len(words)
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class StopWordFeatures(FeatureExtractorBase):
-    def __init__(self, data: pd.DataFrame, text_col: str = "discourse_text") -> None:
-        super(StopWordFeatures, self).__init__(data=data, text_col=text_col)
-        self._name = "stopwords"
-
-    def _extract(self) -> None:
-        stop = stopwords.words("english")
-        self._data[self._name] = self._data[self._text_col].apply(
-            lambda x: len([x for x in x.split() if x in stop]) / len(x.split())
-        )
+    def profile(self) -> Profile:
+        return self._profile
+
+    def build(self) -> None:
+        """Obtains data from dataset and orchestrates build process."""
+
+        # Convert texts to a list of tuples of the format (text,{'discourse_id': discourse_id}).
+        # The second tuple element will be added to the spacy document as context.
+        texts = self._get_texts_with_metadata()
+
+        # Run the pipeline and add 'discourse_id' to document object as custom attribute.
+        docs = self._run_pipeline(texts)
+
+        # Create token_level metadata from data extracted from the doc objects.
+        token_data = self._extract_token_data(docs)
+
+    def reset(self) -> None:
+        """Resets the profile object."""
+        self._dataset = None
+        self._profile = None
+        self._model = None
+        self._pipeline = None
+        self._token_attributes = None
+
+        self._token_data = None
+        self._sentence_data = None
+
+    def _get_config(self) -> None:
+        """Obtains spaCy model and pipeline configurations."""
+        config = SpacyConfig().config
+        try:
+            self._model = config["models"]["trained"]
+            self._pipeline = config["pipelines"]["profile"]['components']
+            self._token_attributes = config['pipelines']['profile']['token_attributes']
+        except KeyError as e:
+            logger.error("The required trained model not found in spaCy configuration file.")
+            raise (e)
+
+    def _get_texts_with_metadata(self) -> list:
+        """Returns text as a list of tuples including text and 'discourse_id'.
+
+        Each document is uniquely identified by a 'discourse_id'. To add this identifier
+        to the spaCy document object created by the pipe object, we must provide
+        the data in (text, {'discourse_id': discourse_id}) format. This will
+        add the identifier information to the document object context.
+
+        Source:https://spacy.io/usage/processing-pipelines
+
+        """
+        texts = self._dataset.get_texts(with_id=True)
+        recs = texts.to_dict(orient="records")
+        texts = []
+        for d in recs:
+            text = (d["discourse_text"], {"discourse_id": d["discourse_id"]})
+            texts.append(text)
+        return texts
+
+    def _run_pipeline(self, texts: list) -> None:
+        """Executes a spaCy pipeline."""
+
+        # Load the trained model and run the pipeline
+        nlp = spacy.load(self._model)
+        doc_tuples = nlp.pipe(texts, as_tuples=True)
+
+        # Add the 'discourse_id' from context to the document object.
+        docs = []
+        for doc, context in doc_tuples:
+            doc._.discourse_id = context[
+                "discourse_id"
+            ]  # The underscore is required for the addition of custom attributes.
+            docs.append(doc)
+
+        return docs
+
+    def _extract_token_data(self, docs: list) -> pd.DataFrame:
+        """Extracts token data from each document and creates token level data frame."""
+        doc_arrays = []
+        for doc in docs:
+            doc.to_array(attr_ids = self._token_attributes)
+        return [
+        (d.doc._.discourse_id,
+        d.i,
+        d.vocab,
+        d.text,
+        d.sent,
+        d.is_alpha,
+        d.is_ascii,
+        d.is_digit,
+        d.is_lower,
+        d.is_upper,
+        d.is_title,
+        d.is_punct,
+        d.is_left_punct,
+        d.is_right_punct,
+        d.is_sent_start,
+        d.is_sent_end,
+        d.is_space,
+        d.is_bracket,
+        d.is_quote,
+        d.is_currency,
+        d.like_url,
+        d.like_num,
+        d.like_email,
+        d.is_oov,
+        d.is_stop) for d in doc:

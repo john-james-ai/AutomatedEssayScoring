@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.10.4                                                                              #
+# Filename   : /00_get_data.yaml                                                                   #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john.james.ai.studio@gmail.com                                                      #
+# URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Friday August 12th 2022 01:24:31 am                                                 #
+# Modified   : Friday August 12th 2022 04:09:20 pm                                                 #
+# ------------------------------------------------------------------------------------------------ #
+# License    : BSD 3-clause "New" or "Revised" License                                             #
+# Copyright  : (c) 2022 John James                                                                 #
+# ================================================================================================ #
+#                                   GET FP2022 DATA                                                #
+# ------------------------------------------------------------------------------------------------ #
+pipeline_name: get_data
+version: 0.1.0
+steps:
+  1:
+    name: data_download_api
+    module: aes.workflow.operators
+    operator: DownloaderAPI
+    params:
+      command: kaggle competitions download -p data/fp2022/external -c feedback-prize-effectiveness
+      destination: data/fp2022/external
+      force: False
+  2:
+    name: data_extract_zip
+    module: aes.workflow.operators
+    operator: ExtractZip
+    params:
+      source: data/fp2022/external/feedback-prize-effectiveness.zip
+      destination: data/fp2022/raw
+      force: False
+  3:
+    name: load_fp2022_data
+    module: aes.workflow.operators
+    operator: LoadCSV
+    params:
+      filepath: data/fp2022/raw/train.csv
+      encoding_errors: 'strict'
+      retry_ignore_encoding_errors: True
+
+  4:
+    name: data_encode_utf-8
+    module: aes.workflow.operators
+    operator: Encoder
+    params:
+      encoding: utf-8
+      column: discourse_text
+
+  5:
+    name: save_fp2022_data
+    module: aes.workflow.operators
+    operator: SaveCSV
+    params:
+      filepath: data/fp2022/staged/train.csv

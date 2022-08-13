@@ -3,36 +3,50 @@
 # ================================================================================================ #
 # Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
 # Version    : 0.1.0                                                                               #
-# Python     : 3.9.12                                                                              #
-# Filename   : /config..yaml                                                                       #
+# Python     : 3.10.4                                                                              #
+# Filename   : /logging.yaml                                                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Tuesday August 9th 2022 09:53:35 pm                                                 #
-# Modified   : Friday August 12th 2022 02:32:52 pm                                                 #
+# Created    : Friday August 12th 2022 07:44:35 pm                                                 #
+# Modified   : Friday August 12th 2022 08:37:34 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
 # ================================================================================================ #
 ---
-folders:
-    fp2022:
-      raw: data/fp2022/0_raw
-      interim: data/fp2022/1_interim
-      processed: data/fp2022/2_processed
-    fp2021:
-      raw: data/fp2021/0_raw
-      interim: data/fp2021/1_interim
-      processed: data/fp2021/2_processed
-columns:
-    train:
-      idvar: discourse_id,
-      features:
-        - essay_id,
-        - discourse_text,
-        - discourse_type,
-      text: discourse_text
-      target: discourse_effectiveness
 
+version: 1
+disable_existing_loggers: False
+formatters:
+    multiprocess:
+        format: "%(levelname)s | %(asctime)s | %(module)s | %(process)d  | %(thread)d  | %(message)s"
+    verbose:
+        format: "%(levelname)s | %(asctime)s | %(module)s | %(message)s"
+    standard:
+        format: "%(levelname)s | %(asctime)s | %(message)s}"
+    simple:
+        format: "%(message)s"
+
+handlers:
+    console:
+        level: INFO
+        class: logging.StreamHandler
+        formatter: simple
+    logfile:
+        level: DEBUG
+        class: logging.handlers.TimedRotatingFileHandler
+        formatter: verbose
+        filename: logs/aes.log
+        when: D
+        backupCount: 3
+loggers:
+    root:
+        handlers:
+            - console
+            - logfile
+        propagate: False
+        level: DEBUG
+...

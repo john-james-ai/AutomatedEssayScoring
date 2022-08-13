@@ -4,124 +4,36 @@
 # Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.4                                                                              #
-# Filename   : /workflow.py                                                                        #
+# Filename   : /pipeline.py                                                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday August 11th 2022 09:43:52 pm                                               #
-# Modified   : Friday August 12th 2022 03:39:05 am                                                 #
+# Modified   : Friday August 12th 2022 08:43:33 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
 # ================================================================================================ #
-"""Workflow Module
-
-Three components make up this module:
-
-    Pipeline: A collection of operators that are executed in sequence.
-    PipelineBuilder: Builds a pipeline object according to specifications
-        and parameters passed in from the entry point.
-    Operator: Base class for all classes that execute atomic pipeline steps.
-
-
-"""
-from abc import ABC, abstractmethod
+"""Pipeline Module"""
 import importlib
 from datetime import datetime
-from typing import Any
 import pandas as pd
 import mlflow
 import logging
 import logging.config
 
 from aes.utils.config import Config
-from aes.utils.log_config import LOG_CONFIG
+from aes.utils.config import LogConfig
+from aes.workflow.operators import Operator
 
 # ------------------------------------------------------------------------------------------------ #
-logging.config.dictConfig(LOG_CONFIG)
+logging.config.dictConfig(LogConfig().config)
 logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------ #
 
 
-class Operator(ABC):
-    """Abstract class for operator classes
-
-    Args:
-        seq (int): Sequence number of operation in a pipeline.
-        params (Any): Parameters for the operation.
-
-    Class Variables:
-        __name (str): The human-reedable name for the operator
-        __desc (str): String describing what the operator does.
-
-    """
-
-    __name = "operator_base_class"
-    __desc = "Describes the interface for all operator subclasses."
-
-    def __init__(self, name: str = None, params: dict = {}) -> None:
-        self._name = name or Operator.__name
-        self._params = params
-
-        self._desc = Operator.__desc
-
-        self._created = datetime.now()
-        self._started = None
-        self._stopped = None
-        self._duration = None
-
-    def __str__(self) -> str:
-        return str(
-            "Sequence #: {}\tOperator: {}\t{}\tParams: {}".format(
-                self._seq, Operator.__name, Operator.__desc, self._params
-            )
-        )
-
-    def run(self, data: Any = None, context: dict = {}) -> Any:
-        self._setup()
-        data = self.execute(data=data, context=context)
-        self._teardown()
-        return data
-
-    @abstractmethod
-    def execute(self, data: Any = None, context: dict = {}) -> Any:
-        pass
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def params(self) -> Any:
-        return self._params
-
-    @property
-    def created(self) -> datetime:
-        return self._created
-
-    @property
-    def started(self) -> datetime:
-        return self._started
-
-    @property
-    def stopped(self) -> datetime:
-        return self._stopped
-
-    @property
-    def duration(self) -> datetime:
-        return self._duration
-
-    def _setup(self) -> None:
-        self._started = datetime.now()
-
-    def _teardown(self) -> None:
-        self._stopped = datetime.now()
-        self._duration = round((self._stopped - self._started).total_seconds(), 4)
-
-
-# ------------------------------------------------------------------------------------------------ #
 class Pipeline:
     """Collection of operators and methods to execute and track Pipeline runs.
 

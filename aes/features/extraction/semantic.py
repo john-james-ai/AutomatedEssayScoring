@@ -1,38 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
+# Project    : Deep Automated Neural Network Essay Scoring and Evaluation (DANNESE)                #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.9.12                                                                              #
-# Filename   : /config..yaml                                                                       #
+# Filename   : /symantic.py                                                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Tuesday August 9th 2022 09:53:35 pm                                                 #
-# Modified   : Friday August 12th 2022 02:32:52 pm                                                 #
+# Created    : Wednesday August 10th 2022 06:28:27 pm                                              #
+# Modified   : Wednesday August 10th 2022 06:28:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
 # ================================================================================================ #
----
-folders:
-    fp2022:
-      raw: data/fp2022/0_raw
-      interim: data/fp2022/1_interim
-      processed: data/fp2022/2_processed
-    fp2021:
-      raw: data/fp2021/0_raw
-      interim: data/fp2021/1_interim
-      processed: data/fp2021/2_processed
-columns:
-    train:
-      idvar: discourse_id,
-      features:
-        - essay_id,
-        - discourse_text,
-        - discourse_type,
-      text: discourse_text
-      target: discourse_effectiveness
-
