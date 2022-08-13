@@ -33,7 +33,7 @@ var/
 .installed.cfg
 *.egg
 
-# References
+# References and Research
 /references/
 
 # Frameworks
