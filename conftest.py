@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : Deep Automated Neural Network Essay Scoring and Evaluation (DANNESE)                #
+# Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
 # Version    : 0.1.0                                                                               #
 # Filename   : /conftest.py                                                                        #
 # ------------------------------------------------------------------------------------------------ #
@@ -10,7 +10,7 @@
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 29th 2022 02:25:41 am                                                   #
-# Modified   : Wednesday August 10th 2022 07:56:29 pm                                              #
+# Modified   : Wednesday August 17th 2022 12:40:50 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
@@ -33,3 +33,8 @@ collect_ignore_glob = ["tests/old_tests/**/*.py"]
 @pytest.fixture(scope="module")
 def data():
     return pd.read_csv(TEST_DATA_FILEPATH)
+
+
+@pytest.fixture(scope="module")
+def test_data_foldere():
+    return "tests/testdata"

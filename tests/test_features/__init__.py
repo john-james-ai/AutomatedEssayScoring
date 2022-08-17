@@ -4,49 +4,15 @@
 # Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.4                                                                              #
-# Filename   : /logging.yaml                                                                       #
+# Filename   : /__init__.py                                                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday August 12th 2022 07:44:35 pm                                                 #
-# Modified   : Friday August 12th 2022 08:37:34 pm                                                 #
+# Created    : Monday August 15th 2022 04:02:13 pm                                                 #
+# Modified   : Monday August 15th 2022 04:02:17 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
 # ================================================================================================ #
----
-
-version: 1
-disable_existing_loggers: False
-formatters:
-    multiprocess:
-        format: "%(levelname)s | %(asctime)s | %(module)s | %(process)d  | %(thread)d  | %(message)s"
-    verbose:
-        format: "%(levelname)s | %(asctime)s | %(module)s | %(message)s"
-    standard:
-        format: "%(levelname)s | %(asctime)s | %(message)s}"
-    simple:
-        format: "%(message)s"
-
-handlers:
-    console:
-        level: INFO
-        class: logging.StreamHandler
-        formatter: simple
-    logfile:
-        level: DEBUG
-        class: logging.handlers.TimedRotatingFileHandler
-        formatter: verbose
-        filename: logs/aes.log
-        when: D
-        backupCount: 3
-loggers:
-    root:
-        handlers:
-            - console
-            - logfile
-        propagate: False
-        level: DEBUG
-...

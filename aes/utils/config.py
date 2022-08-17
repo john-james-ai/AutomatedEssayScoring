@@ -10,7 +10,7 @@
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 29th 2022 12:41:04 am                                                   #
-# Modified   : Friday August 12th 2022 08:42:27 pm                                                 #
+# Modified   : Monday August 15th 2022 05:42:39 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
@@ -19,7 +19,8 @@
 from abc import ABC
 import os
 from dotenv import load_dotenv
-import yaml
+
+from aes.utils.io import IOFactory
 
 # ------------------------------------------------------------------------------------------------ #
 
@@ -27,61 +28,83 @@ import yaml
 class Config(ABC):
     """Base class defining read / write access to configuration files."""
 
-    __CONFIG_NAME = None
-
-    def __init__(self) -> None:
+    def __init__(self, name: str) -> None:
+        self._filepath = None
+        self._io = None
         self._config = None
+        self._initialize(name)
 
     @property
     def config(self) -> dict:
-        return self.read()
+        return self._config
 
-    def get_config_filepath(self) -> str:
+    @config.setter
+    def config(self, config: dict) -> None:
+        self._config = config
+        self.save()
+
+    def load(self) -> list:
+        """Reads data from a yaml file."""
+        self._config = self._io.read(self._filepath)
+
+    def save(self) -> None:
+        """Writes config data to a yaml file."""
+        self._io.write(data=self._config, filepath=self._filepath)
+
+    def _initialize(self, name: str) -> None:
+        """Initializes the Config object with an io object, a filepath, and the config data."""
+
+        # Config filepaths are stored in the environment variables.
         load_dotenv()
-        return os.getenv(self._config_name)
+        self._filepath = os.getenv(name)
 
-    def read(self) -> list:
-        """Reads data from a yaml file.
+        # Extract the file format from the filepath
+        fileformat = os.path.splitext(self._filepath)[1].replace(".", " ")
 
-        Args:
-            key (str): The (optional) key for the corresponding value to return.
-        """
-        filepath = self.get_config_filepath()
+        # Use the fileformat to obtain an io object.
+        self._io = IOFactory().io(fileformat=fileformat)
 
-        with open(filepath) as file:
-            return yaml.load(file, Loader=yaml.SafeLoader)
-
-    def write(self, data: dict) -> None:
-        """Writes data to a yaml file.
-
-        Args:
-            data (dict): The data to be written to the file.
-        """
-        filepath = self.get_config_filepath()
-
-        with open(filepath, "w") as file:
-            yaml.dump(data, file, sort_keys=False, default_flow_style=False)
+        # Load the configuration data
+        self._config = self._io.read(self._filepath)
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataConfig(Config):
+class FP2021Config(Config):
 
-    __CONFIG_NAME = "CONFIG_DATA"
+    __CONFIG_NAME = "CONFIG_DATA_FP2021"
 
     def __init__(self) -> None:
-        self._config_name = DataConfig.__CONFIG_NAME
+        name = FP2021Config.__CONFIG_NAME
+        super(FP2021Config, self).__init__(name=name)
 
 
 # ------------------------------------------------------------------------------------------------ #
+
+
+class FP2022Config(Config):
+
+    __CONFIG_NAME = "CONFIG_DATA_FP2022"
+
+    def __init__(self) -> None:
+        name = FP2022Config.__CONFIG_NAME
+        super(FP2022Config, self).__init__(name=name)
+
+
+# ------------------------------------------------------------------------------------------------ #
+
+
 class LogConfig(Config):
 
     __CONFIG_NAME = "CONFIG_LOG"
 
     def __init__(self) -> None:
-        self._config_name = LogConfig.__CONFIG_NAME
+        config = LogConfig.__CONFIG_NAME
+        super(LogConfig, self).__init__(config)
 
 
 # ------------------------------------------------------------------------------------------------ #
+
+
 class SpacyConfig(Config):
 
     __CONFIG_NAME = "CONFIG_SPACY"

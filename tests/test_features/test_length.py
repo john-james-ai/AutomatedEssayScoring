@@ -11,7 +11,7 @@
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday August 10th 2022 04:15:45 pm                                              #
-# Modified   : Friday August 12th 2022 08:43:33 pm                                                 #
+# Modified   : Monday August 15th 2022 05:51:15 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
@@ -35,6 +35,7 @@ logger.setLevel(logging.DEBUG)
 # ================================================================================================ #
 
 
+@pytest.mark.skip("Deprecated")
 @pytest.mark.length
 class TestLengthFeatureExtractors:
     def test_length_features(self, caplog, data):

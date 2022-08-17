@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.9.12                                                                              #
+# Filename   : /fp2021.yml                                                                         #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john.james.ai.studio@gmail.com                                                      #
+# URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Tuesday August 9th 2022 09:53:35 pm                                                 #
+# Modified   : Wednesday August 17th 2022 12:19:30 am                                              #
+# ------------------------------------------------------------------------------------------------ #
+# License    : BSD 3-clause "New" or "Revised" License                                             #
+# Copyright  : (c) 2022 John James                                                                 #
+# ================================================================================================ #
+---
+kaggle competitions download -c feedback-prize-2021
+
+name: fp2021_data_etl
+steps:
+    1:
+        name: data_download_api
+        module: atelier.workflow.operators
+        operator: KaggleDownloader
+        params:
+            competition: feedback-prize-2021
+            destination: data/fp2021/external
+            filename: feedback-prize-2021.zip
+            force: False
+    2:
+        name: data_extract_zip
+        module: atelier.workflow.operators
+        operator: ExtractZip
+        params:
+            source: data/fp2021/external/feedback-prize-2021.zip
+            destination: data/fp2021/raw
+            force: False
+    3:
+        name: load_data_csv
+        module: atelier.workflow.operators
+        operator: LoadCSV
+        params:
+            filepath: data/fp2021/raw/train.csv
+            encoding: 'utf-8'
+            encoding_errors: 'strict'
+            force: False
+    4:
+        name: save_data_parquet
+        module: atelier.workflow.operators
+        operator: SaveParquet
+        params:
+            filepath: data/fp2021/staged/train.parquet
+            force: True
+...

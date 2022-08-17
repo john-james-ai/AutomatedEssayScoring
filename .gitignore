@@ -7,10 +7,12 @@ __pycache__/
 *.so
 
 # Data
-/home/john/projects/ArgumentEffectiveness/data
 *.csv
 *.xlsx
 feature_store
+*.parquet
+*.pickle
+*.zip
 
 # Notes
 /notes/

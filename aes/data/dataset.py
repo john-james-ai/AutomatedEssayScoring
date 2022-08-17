@@ -11,7 +11,7 @@
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday August 12th 2022 02:28:43 pm                                                 #
-# Modified   : Friday August 12th 2022 08:43:33 pm                                                 #
+# Modified   : Monday August 15th 2022 04:59:41 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
@@ -21,7 +21,7 @@ import os
 import pandas as pd
 import logging
 import logging.config
-from aes.workflow.operators import LoadCSV, SaveCSV
+from aes.utils.io import IO
 from aes.utils.config import LogConfig
 
 # ------------------------------------------------------------------------------------------------ #
@@ -32,57 +32,53 @@ logger.setLevel(logging.DEBUG)
 
 
 class Dataset:
-    """Encapsulates dataset metadata with io capability
+    """Encapsulates dataset with io capability
 
     Args:
-        id (str): Dataset identifier, e.g. 'fp2022'
-        name (str): Dataset name
-        description (str): Dataset description
-        stage (str): Stage of data processing, e.g. 'raw'
+        name (str): Name for this instantiation of the dataset.
+        stage (str): Stage of data processing, e.g.  'raw'. Optional, as None means pending acquisition.
         filepath (str): Path to file
         version (int): Numeric version number
     """
 
-    __columns = [
+    __feature_names = [
         "discourse_id",
         "essay_id",
         "discourse_text",
         "discourse_type",
-        "discourse_effectiveness",
     ]
     __primary_key = "discourse_id"
     __target_var = "discourse_effectiveness"
     __text_var = "discourse_text"
 
     def __init__(
-        self, id: str, name: str, description: str, stage: str, filepath: str, version: int = 1
+        self,
+        name: str,
+        stage: str = None,
+        filepath: str = None,
+        version: int = 1,
     ) -> None:
-        self._id = id
         self._name = name
-        self._description = description
         self._stage = stage
         self._filepath = filepath
         self._fileformat = filepath.splitext()[1].replace(".", "")
-        self._version
+        self._version = version
 
-        self._columns = Dataset.__columns
+        self._io = IO(self._fileformat)
+
+        self._feature_names = Dataset.__feature_names
         self._primary_key = Dataset.__primary_key
         self._target_var = Dataset.__target_var
         self._text_var = Dataset.__text_var
 
         self._data = None
 
-    @property
-    def id(self) -> str:
-        return self._id
+        if os.path.exists(self._filepath):
+            self._load()
 
     @property
     def name(self) -> str:
         return self._name
-
-    @property
-    def description(self) -> str:
-        return self._description
 
     @property
     def stage(self) -> str:
@@ -117,34 +113,16 @@ class Dataset:
         return self._text_var
 
     @property
-    def data(self) -> pd.DataFrame:
-        if self._data is None:
-            self.load()
-        return self._data
+    def features(self) -> pd.DataFrame:
+        return self._data[self._feature_names]
 
-    @data.setter
-    def data(self, data: pd.DataFrame) -> None:
-        self._data = data
+    @property
+    def target(self) -> pd.DataFrame:
+        return self._data[self._primary_key, self._target_var]
 
-    def get_texts(self, with_id: bool = True) -> pd.DataFrame:
-        self.load()
-        if with_id:
-            return self._data[[self._primary_key, self._text_var]]
-        else:
-            return self._data[self._text_var]
+    @property
+    def texts(self) -> pd.DataFrame:
+        return self._data[[self._primary_key, self._text_var]]
 
-    def load(self, force: bool = False) -> None:
-        if self._data is None or force:
-            params = {"filepath": self._filepath}
-            io = LoadCSV(name=self._name, params=params)
-            self._data = io.execute()
-        else:
-            logger.info("Data already loaded. Set force=True to reload.")
-
-    def save(self, force: bool = False) -> None:
-        if not os.path.exists(self._filepath) or force:
-            params = {"filepath": self._filepath}
-            io = SaveCSV(name=self._name, params=params)
-            io.execute()
-        else:
-            logger.info("Data already exiss. Set force=True to overwrite.")
+    def _load(self) -> None:
+        self._data = self._io.read(self._filepath)

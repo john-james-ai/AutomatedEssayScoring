@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : Deep Automated Neural Network Essay Scoring and Evaluation (DANNESE)                #
+# Project    : Automated Essay Scoring: A Data-First Deep Learning Approach                        #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.9.12                                                                              #
 # Filename   : /visualize.py                                                                       #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/john-james-ai/AutomatedEssayScoring                              #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday August 2nd 2022 08:08:36 pm                                                 #
-# Modified   : Wednesday August 10th 2022 02:03:31 pm                                              #
+# Modified   : Sunday August 14th 2022 01:55:35 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : BSD 3-clause "New" or "Revised" License                                             #
 # Copyright  : (c) 2022 John James                                                                 #
@@ -21,7 +21,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import Union
-from aes.utils.frint import print_str
+from aes.utils.pprint import print_str
 from aes.utils.config import VisualConfig
 
 # ------------------------------------------------------------------------------------------------ #
